@@ -262,7 +262,7 @@ void processATCommand(const String& fullCmd) {
             free = ESP.getFreeHeap();
 
             // Total RAM
-            total = TOTAL_DRAM_SIZE; // 52KB
+            total = TOTAL_DRAM_SIZE;
 
             // Avoid underflow
             used = (free < total) ? (total - free) : 0;
@@ -524,12 +524,29 @@ static void handleFreeCommand(const String& args) {
             ser->println();
         #endif // platform
     };
-    // Execute print (loop if needed)
+    // Execute print (loop if needed), but allow 'exit' to break
     do {
         printMem(atSerial);
+
+        // Check for 'exit' only if in loop mode (delaySec > 0)
         if (delaySec > 0) {
-            delay(delaySec * 1000);
+            atSerial->println("Type 'exit' to stop monitoring.");
+            unsigned long nextTime = millis() + delaySec * 1000;
             atSerial->println(); // separator
+
+            // Wait up to delaySec seconds, but listen for "exit"
+            while (millis() < nextTime) {
+                if (atSerial->available()) {
+                    String input = atSerial->readStringUntil('\n');
+                    input.trim();
+                    if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("q")) {
+                        return; // Exit the entire command immediately
+                    }
+                    // Optionally: echo back or ignore other commands
+                    // You might want to buffer them or handle asynchronously
+                }
+                delay(10); // Small delay to avoid watchdog/WiFi issues
+            }
         }
     } while (delaySec > 0);
 }
