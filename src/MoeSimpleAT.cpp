@@ -658,7 +658,7 @@ void handleShellMode() {
                             }
                             break;
                         }
-                        if (cmdLine.equalsIgnoreCase(name)) {
+                        if (cmdLine == name) {
                             isBuiltin = true;
                             bool found = false;
                             for (auto& c : customShellCommands) {
