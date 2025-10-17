@@ -693,7 +693,7 @@ void handleShellMode() {
 
                     bool matched = false;
                     for (auto& c : customShellCommands) {
-                        if (cmdName.equalsIgnoreCase(c.command)) {
+                        if (cmdName == c.command) {
                             c.handler(args);
                             matched = true;
                             break;
