@@ -1,5 +1,7 @@
 - 简体中文
+- [繁體中文](README_zhtw.md)
 - [English](README.md)
+- [日本語](README_jp.md)
 
 # 萌简 AT 指令集
 [![License](https://img.shields.io/badge/license-LGPL-blue.svg)](LICENSE)
@@ -14,14 +16,18 @@
 
 ## 使用方法
 1. 下载并安装 Arduino IDE
+
 前往 [Arduino 官网](https://www.arduino.cc/en/software)下载并安装 Arduino IDE。
 2. 安装萌简 AT 指令集库
+
 前往 Arduino 库目录，通常是 "Documents/Arduino/libraries"
-通过git clone命令下载萌简 AT 指令集库：
+
+通过 `git clone` 命令下载萌简 AT 指令集库：
 ``` shell
 git clone https://github.com/Moe-Simple/MoeSimpleAT.git
 ```
 3. 打开 Arduino IDE，选择开发板和端口
+
 可以选择的板子：
   - ESP8266
   - ESP32
@@ -72,7 +78,8 @@ ready
 ### 内建 SHELL 命令
 - echo <字符串>: 输出字符串
 - free [-b|-k|-m] [-t] [-s delay]: 显示内存使用情况，同 Linux free 命令，可支持内部 RAM 与外部 PSRAM，-b: 字节，-k: 千字节，-m: 兆字节，-t: 显示总计，-s: 刷新间隔(秒)
-- reboot: 重启设备，同 AT+RST
+- reboot: 重启设备，同 `AT+RST`
+- shutdown: 关闭设备，通过设置 `wakeupConfigured = true;` 设置唤醒相关逻辑。
 - exit: 退出 SHELL 模式
 - help: 显示帮助信息
 
@@ -89,7 +96,7 @@ void myCallback(String args) {
 ```
 
 ## 自定义 SHELL 命令
-你可以通过程序中调用 `registerShellCommand(<指令>, <回调>, <帮助信息>)` 来注册自己的 AT 命令。
+你可以通过程序中调用 `registerShellCommand(<指令>, <回调>, <帮助信息>)` 来注册自己的 SHELL 命令。
 
 回调函数的定义如下：
 ``` Arduino

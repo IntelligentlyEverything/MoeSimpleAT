@@ -8,6 +8,9 @@
 #if defined(ESP32)
     #include <vector>
     #include <esp_heap_caps.h>
+    #include <esp_sleep.h>
+#elif defined(ESP8266)
+    #include <ESP8266WiFi.h>
 #endif
 
 // ----------------------------
@@ -26,7 +29,12 @@ std::vector<CustomShellCommand> customShellCommands;
 // Static variable to hold the restore callback
 static std::function<void()> restoreCallback = nullptr;
 
+// Static variable to hold the shutdown callback
+static std::function<void()> shutdownCallback = nullptr;
+
 static bool shellFirstPromptDone = false;
+
+bool wakeupConfigured = false;
 
 // ----------------------------
 // User callable function implementation
@@ -72,6 +80,11 @@ void registerShellCommand(const String& cmd, const ShellCommandHandler& handler,
     customShellCommands.push_back({ cmd, handler, help });
 }
 
+/**
+ * @brief Get the help message for all AT commands.
+ * 
+ * @return String containing the help message
+ */
 String getATHelp() {
     String help = "Built-in Commands:\r\n";
     help += "  AT           - Test\r\n";
@@ -94,6 +107,11 @@ String getATHelp() {
     return help;
 }
 
+/**
+ * @brief Get the help message for all shell commands.   
+ * 
+ * @return String containing the help message
+ */
 String getShellHelp() {
     String help = "Built-in Shell Commands:\r\n";
     help += "  echo <text>                      - Print text\r\n";
@@ -103,6 +121,7 @@ String getShellHelp() {
     help += "  top                              - Show system tasks (if supported)\r\n";
     help += "  kill [pid]                       - Kill task by PID (if supported)\r\n";
     help += "  reboot                           - Restart system\r\n";
+    help += "  shutdown                         - Shutdown system\r\n";
     help += "  exit                             - Exit shell mode\r\n";
     help += "  help                             - Show this message\r\n";
     help += "Custom Commands:\r\n";
@@ -138,6 +157,10 @@ String trim(const String& str) {
 
 void onRestore(std::function<void()> callback) {
     restoreCallback = callback;
+}
+
+void onShutdown(std::function<void()> callback) {
+    shutdownCallback = callback;
 }
 
 long currentBaudRate = SERIAL_BAUD_RATE;
@@ -510,6 +533,32 @@ static void handleFreeCommand(const String& args) {
         }
     } while (delaySec > 0);
 }
+// ----------------------------
+// Shutdown Command Handler
+// ----------------------------
+static void handleShutdownCommand() {
+    atSerial->println();
+    // Check if the startup source is configured
+    if (!wakeupConfigured) {
+        atSerial->println("The startup related logic is not enabled, so it may not be able to start up.");
+    }
+
+    // Prompt to shut down
+    atSerial->println("The system is going down for shutdown NOW!");
+
+    // If a shutdown callback is registered, execute
+    if (shutdownCallback) {
+        shutdownCallback();
+    }
+
+    #if defined(ESP32)
+        esp_deep_sleep_start();
+    #elif defined(ESP8266)
+        ESP.deepSleep(0);
+    #elif defined(MOE_RTOS_PLATFORM_AIR001)
+        atSerial->println("Air001 currently does not support shutdown commands.");
+    #endif
+}
 
 // ----------------------------
 // Shell Mode Handler
@@ -546,17 +595,17 @@ void handleShellMode() {
 
                 String cmdLine = trim(line);
                 String args = trim(line);
-                if (cmdLine.equalsIgnoreCase("help") || cmdLine == "?") {
+                if (cmdLine == "help" || cmdLine == "HELP" || cmdLine == "?") {
                     atSerial->println();
                     atSerial->print(getShellHelp());
                 }
-                else if (cmdLine.equalsIgnoreCase("exit")) {
+                else if (cmdLine =="exit" || cmdLine =="EXIT") {
                     atSerial->println("OK");
                     inShellMode = false;
                     line = "";
                     return;
                 }
-                else if (cmdLine.equalsIgnoreCase("reboot")) {
+                else if (cmdLine == "reboot") {
                     atSerial->print(__DATE__);
                     atSerial->print(" ");
                     atSerial->print(__TIME__);
@@ -570,18 +619,21 @@ void handleShellMode() {
                         ESP.restart();
                     #endif
                 }
+                else if (cmdLine == "shutdown") {
+                    handleShutdownCommand();
+                }
                 else if (cmdLine.startsWith("echo ")) {
                     String output = cmdLine.substring(5);
                     output.trim();
                     atSerial->println(output);
                 }
-                else if (cmdLine.equalsIgnoreCase("echo")) {
+                else if (cmdLine == "echo") {
                     atSerial->println();
                 }
                 else if (cmdLine.startsWith("free ")) {
                     handleFreeCommand(args);
                 }
-                else if (cmdLine.equalsIgnoreCase("free")) {
+                else if (cmdLine == "free") {
                     handleFreeCommand(args);
                 }
                 else {

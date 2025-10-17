@@ -225,4 +225,11 @@ void handleATCommands();
  */
 void onRestore(std::function<void()> callback);
 
+/**
+ * @brief Register a callback function to be called when shutdown is received.
+ * 
+ * @param callback Function to call when shutdown is executed
+ */
+void onShutdown(std::function<void()> callback);
+
 #endif // AT_COMMANDS_H
