@@ -188,7 +188,7 @@ void processATCommand(const String& fullCmd) {
     else if (cmd == "AT+RST") {
         atSerial->println("OK");
         delay(100);
-        #ifdef MOE_RTOS_PLATFORM_AIR001
+        #ifdef AIR001
             void(* resetFunc) (void) = 0;
             resetFunc();
         #else
@@ -270,7 +270,7 @@ void processATCommand(const String& fullCmd) {
             // Clamp used to total
             if (used > total) used = total;
 
-        #elif defined(MOE_RTOS_PLATFORM_AIR001)
+        #elif defined(AIR001)
             // Air001 / STM32: Use linker symbols
             extern uint32_t _heap_start;
             extern uint32_t _heap_end;
@@ -502,7 +502,7 @@ static void handleFreeCommand(const String& args) {
                 ser->print(formatNum(free_mem_u));
                 ser->println();
             }
-        #elif defined(MOE_RTOS_PLATFORM_AIR001)
+        #elif defined(AIR)
             extern uint32_t _heap_start;
             extern uint32_t _heap_end;
             char* heap_brk = (char*)sbrk(0);
@@ -572,7 +572,7 @@ static void handleShutdownCommand() {
         esp_deep_sleep_start();
     #elif defined(ESP8266)
         ESP.deepSleep(0);
-    #elif defined(MOE_RTOS_PLATFORM_AIR001)
+    #elif defined(AIR001)
         atSerial->println("Air001 currently does not support shutdown commands.");
     #endif
 }
@@ -629,7 +629,7 @@ void handleShellMode() {
                     atSerial->println();
                     atSerial->println("The system is going down for reboot NOW!");
                     delay(100);
-                    #ifdef MOE_RTOS_PLATFORM_AIR001
+                    #ifdef AIR001
                         void(* resetFunc) (void) = 0;
                         resetFunc();
                     #else
